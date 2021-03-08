@@ -42,26 +42,69 @@ shape_soil_type = read_sf(file.path(shapefiles,"20141210_SoilSuitabilitySanitati
 #sanitation 3857
 #sanitation3857 = read_sf(file.path(shapefiles,"20141210_SoilSuitabilitySanitation_epsg3857.shp" ))
 
+shape_sanitation5 = read_sf(file.path(shapefiles, "20141210_SoilSuitabilitySanitation_5_epsg3857.shp")) %>%
+  mutate(code = case_when(code == "F" ~ "Firm ground",
+                          code == "S" ~ "Sandy soil",
+                          code == "W" ~ "Porne to high water",
+                          code == "WB" ~ "Water body"
+                          )
+         ) %>%
+  st_transform( 4326 )
 
-#District soil types (given by Jim)
 
-district_soils = xlsx::read.xlsx2(file.path(shapefiles, 
+water_logged_shape = shape_sanitation5 %>%
+  filter(code == "Porne to high water")
+
+#District soil types (given by Jim) ------------------------------------------------
+
+#soils
+district_soils = xlsx::read.xlsx2(file.path(andres_files, 
                                             "district shape file soil types - soil codes jim 25.02.2021.xlsx"), 
                                   sheetName = "Sheet 1")
 
-soil_keys = xlsx::read.xlsx2(file.path(shapefiles, 
+
+#unicef soils
+unicef_districts = xlsx::read.xlsx2(file.path(andres_files, 
+                                              "Copy of Copy of district shape file soil types - soil codes jim 25.02.2021 jp.xlsx"), 
+                                    sheetName = "UNICEF Priority Districts") %>%
+  select(NAME, Priority, Soil.types)
+  
+  
+#join unicef with soils
+districts_soils_unicef = district_soils %>%
+  left_join(unicef_districts) %>%
+  mutate(unicef = !is.na(Priority),
+         Soil_types = case_when(unicef == T ~ Soil.types,
+                                T ~ Soil_types))
+
+
+
+#keys
+soil_keys = xlsx::read.xlsx2(file.path(andres_files, 
                                        "district shape file soil types - soil codes jim 25.02.2021.xlsx"), 
                              sheetName = "key")
 
 
-district_soils_key = district_soils %>%
+district_soils_key = districts_soils_unicef %>%
   left_join(soil_keys) %>%
   rename(labels_soil = Labels)
 
 district_shape_soil = district_shape %>%
     left_join(district_soils_key , by= c("NAME")) %>%
+  mutate(labels_soil = factor(labels_soil,
+                              levels = c("Mainly stable soil",
+                                         "Mixed stable and unstable soils",
+                                         "Largely unstable soils",
+                                         "Largely sandy soils")
+                              )
+         ) %>%
     st_transform( 4326 )
 
+
+
+#Priority disctricts of UNICEF
+shape_unicef = district_shape_soil %>%
+  filter(unicef)
 
 
 

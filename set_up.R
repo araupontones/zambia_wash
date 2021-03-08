@@ -1,7 +1,12 @@
 library(pacman)
 
 #load packages 
-p_load(tidyverse, sf, cartography, ggrepel)
+p_load(tidyverse, sf, cartography, ggrepel, rio)
+
+
+
+library(extrafont)
+loadfonts(dev = 'win')
 
 
 #define directories ---------------------------------------------------------------
@@ -10,6 +15,7 @@ dropbox = "C:/Users/andre/Dropbox/A4413 Zambia UNICEF sanitation assessment (sha
 shapefiles = file.path(dropbox, "Shape files")
 
 sf_lavvun = file.path(shapefiles,"Lavuun shape files")
+andres_files = file.path(shapefiles, "Andres Maps")
 health_facilities_points = file.path(shapefiles,"MoH RHC coords", "Health Facility Listing with GeoCodes.xlsx")
 health_facilities_shape = file.path(shapefiles,"MoH shape files")
 
@@ -71,8 +77,8 @@ district_shape = read_sf(file.path(tempdir(), "admbound_featuretopolygon_Pr.shp"
 
 #only keeping relevant districts for study
 ward_shape = read_sf(file.path(tempdir(), "zmb03_ward.shp")) %>%
-  mutate(NAME2_ = case_when(str_detect(NAME2_, "Chama") ~"Chama", T ~ NAME2_)) %>%
-  filter(NAME2_ %in% c("Mongu","Monze","Chama")) %>%
+#mutate(NAME2_ = case_when(str_detect(NAME2_, "Chama") ~"Chama", T ~ NAME2_)) %>%
+  filter(NAME2_ %in% c("Mongu","Monze","Choma")) %>%
   rename(NAME =  NAME2_) %>%
   st_set_crs(4326)
 
